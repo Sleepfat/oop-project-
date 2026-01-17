@@ -54,6 +54,7 @@ class User:
     
 class Account:
     DAILY_LIMIT = 40000
+    ANNUAL_FEE = 150
 
     def __init__(self, account_no, user, amount):
         self.account_no = account_no
@@ -68,6 +69,14 @@ class Account:
 
     def reset_daily_limit(self):
         self.daily_used = 0
+
+    def pay_annual_fee(self):
+        if self.amount < self.ANNUAL_FEE:
+            raise Exception("Insufficient balance for annual fee")
+        self.amount -= self.ANNUAL_FEE
+        self.transaction_history.append(
+            Transaction("Annual Fee", self.ANNUAL_FEE)
+        )
 
     def _check_amount(self, amount):
         if amount <= 0:
