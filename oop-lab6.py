@@ -53,19 +53,29 @@ class User:
         return None
     
 class Account:
+    DAILY_LIMIT = 40000
+
     def __init__(self, account_no, user, amount):
         self.account_no = account_no
         self.user = user
         self.amount = amount
         self.atm_card = None
         self.transaction_history = []
+        self.daily_used = 0
 
     def add_atm_card(self, atm_card):
         self.atm_card = atm_card
 
+    def reset_daily_limit(self):
+        self.daily_used = 0
+
     def _check_amount(self, amount):
         if amount <= 0:
             raise ValueError("Amount must be positive")
+
+    def _check_daily_limit(self, amount):
+        if self.daily_used + amount > self.DAILY_LIMIT:
+            raise Exception("Daily limit exceeded")
 
     def deposit(self, atm_machine, amount):
         atm_machine._validate_card(self)
@@ -77,6 +87,7 @@ class Account:
     def withdraw(self, atm_machine, amount):
         atm_machine._validate_card(self)
         self._check_amount(amount)
+        self._check_daily_limit(amount)
 
         if amount > self.amount:
             raise Exception("Insufficient balance")
@@ -86,17 +97,22 @@ class Account:
 
         self.amount -= amount
         atm_machine.balance -= amount
+        self.daily_used += amount
+
         self.transaction_history.append(Transaction("Withdraw", amount))
 
     def transfer(self, atm_machine, amount, to_account):
         atm_machine._validate_card(self)
         self._check_amount(amount)
+        self._check_daily_limit(amount)
 
         if amount > self.amount:
             raise Exception("Insufficient balance")
 
         self.amount -= amount
         to_account.amount += amount
+        self.daily_used += amount
+
         self.transaction_history.append(Transaction("Transfer", amount))
 
     def print_transactions(self):
